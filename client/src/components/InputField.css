@@ -1,0 +1,112 @@
+.input-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.input-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  text-align: left;
+  letter-spacing: -0.01em;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--color-white);
+  transition: all var(--transition-normal);
+}
+
+.input-container:hover:not(.is-disabled) {
+  border-color: var(--color-border-hover);
+}
+
+.input-container:focus-within {
+  border-color: var(--color-primary-dark);
+  box-shadow: 0 0 0 3.5px rgba(62, 15, 141, 0.12);
+  background-color: var(--color-white);
+}
+
+.input-leading-icon {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-subtle);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.input-container:focus-within .input-leading-icon {
+  color: var(--color-primary-dark);
+}
+
+.input-element {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-dark);
+  font-family: 'Montserrat', sans-serif;
+  border-radius: var(--radius-md);
+}
+
+.input-container.has-icon .input-element {
+  padding-left: 42px;
+}
+
+.input-element::placeholder {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+.input-container.is-disabled {
+  background-color: #F9FAFB;
+  border-color: #E5E7EB;
+  cursor: not-allowed;
+}
+
+.input-container.is-disabled .input-element {
+  color: var(--color-text-subtle);
+  cursor: not-allowed;
+}
+
+.input-container.is-error {
+  border-color: var(--color-error);
+  background-color: #FFFDFD;
+}
+
+.input-container.is-error:focus-within {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3.5px rgba(220, 38, 38, 0.12);
+}
+
+.input-container.is-error .input-leading-icon {
+  color: var(--color-error);
+}
+
+.input-error-message {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-error);
+  text-align: left;
+  margin-top: 2px;
+}
+
+.input-error-icon {
+  flex-shrink: 0;
+}
