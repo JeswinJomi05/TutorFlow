@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import api from './api';
 
 const authService = {
   /**
-   * Login user with email and password
+   * Login user with email, password, and role
    * @param {string} email - User email
    * @param {string} password - User password
    * @param {string} role - User role (tutor or student)
@@ -12,60 +10,69 @@ const authService = {
    */
   login: async (email, password, role) => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/auth/login`,
-        { email, password, role },
-        { timeout: 3000 }
-      );
+      const response = await api.post('/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+      });
 
-      if (response.data?.token) {
-        localStorage.setItem('authToken', response.data.token);
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userEmail', email);
-        if (response.data.user) {
-          localStorage.setItem('userData', JSON.stringify(response.data.user));
+      const { token, user } = response.data;
+
+      if (token) {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userRole', user?.role || role);
+        localStorage.setItem('userEmail', user?.email || email);
+        if (user) {
+          localStorage.setItem('userData', JSON.stringify(user));
         }
       }
 
       return response.data;
     } catch (error) {
-      // If backend explicitly rejected credentials (4xx), throw server message
       if (error.response && error.response.data) {
         throw error.response.data;
       }
-
-      // If network error / backend offline, provide fallback demo login for frontend testing
-      console.warn('Backend server unreachable, using offline demo session authentication.');
-      
-      const mockToken = `demo_jwt_token_${role}_${Date.now()}`;
-      const mockUser = {
-        id: role === 'tutor' ? 'tutor_01' : 'student_01',
-        email: email,
-        name: role === 'tutor' ? 'Prof. Sarah Jenkins' : 'Alex Rivera',
-        role: role,
-      };
-
-      localStorage.setItem('authToken', mockToken);
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userData', JSON.stringify(mockUser));
-
-      return {
-        token: mockToken,
-        user: mockUser,
-        message: 'Logged in successfully (Demo Mode)',
+      throw {
+        success: false,
+        message: 'Could not connect to backend server. Please verify the server is running.',
       };
     }
   },
 
   /**
-   * Logout user
+   * Fetch current authenticated user details from backend
+   * @returns {Promise<Object>}
    */
-  logout: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userData');
+  getMe: async () => {
+    try {
+      const response = await api.get('/auth/me');
+      if (response.data?.user) {
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
+        localStorage.setItem('userRole', response.data.user.role);
+      }
+      return response.data;
+    } catch (error) {
+      if (error.response?.data) {
+        throw error.response.data;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Logout user and clear local cache
+   */
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore network errors during logout
+    } finally {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userData');
+    }
   },
 
   /**
