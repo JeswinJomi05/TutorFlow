@@ -10,14 +10,14 @@ const roleContent = {
   tutor: {
     heading: 'Welcome back, Tutor',
     subheading: 'Log in to manage your scheduled sessions, student track records, and lesson plans.',
-    demoEmail: 'sarah.tutor@tutorflow.com',
-    demoPassword: 'password123',
+    demoEmail: 'tutor@tutorflow.com',
+    demoPassword: 'Tutor@123',
   },
   student: {
     heading: 'Welcome back, Student',
     subheading: 'Log in to view upcoming tutoring sessions, assignments, and homework feedback.',
-    demoEmail: 'alex.student@tutorflow.com',
-    demoPassword: 'password123',
+    demoEmail: 'student@tutorflow.com',
+    demoPassword: 'Student@123',
   },
 };
 

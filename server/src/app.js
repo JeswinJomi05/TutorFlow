@@ -4,12 +4,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-
 const authRoutes = require('./routes/auth.routes');
 const tutorRoutes = require('./routes/tutor.routes');
 const studentRoutes = require('./routes/student.routes');
 const sessionRoutes = require('./routes/session.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const app = express();
 
@@ -17,13 +18,25 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
-const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:5173'];
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:5173',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman) or matching whitelist
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps, curl, postman) or matching whitelist / localhost
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
         callback(null, true);
       } else {
         callback(new Error('CORS blocked: Origin not allowed'));
