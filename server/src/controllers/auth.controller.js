@@ -16,6 +16,8 @@ const login = asyncHandler(async (req, res) => {
     role,
   });
 
+  
+
   // Attach HTTP-only cookie for secure browser sessions
   res.cookie('token', token, cookieOptions);
 
@@ -33,6 +35,7 @@ const login = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const getMe = asyncHandler(async (req, res) => {
+  
   return res.status(200).json({
     success: true,
     user: {
