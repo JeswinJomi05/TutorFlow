@@ -47,6 +47,7 @@ const getMe = asyncHandler(async (req, res) => {
   });
 });
 
+
 /**
  * @desc    Log out user and clear auth cookie
  * @route   POST /api/auth/logout

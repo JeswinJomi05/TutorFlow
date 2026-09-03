@@ -19,8 +19,8 @@ import './Dashboard.css';
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(authService.getUser() || {
-    name: 'Alex Rivera',
-    email: 'student@tutorflow.com',
+    name: 'Student',
+    email: '',
   });
   const [profile, setProfile] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -115,11 +115,11 @@ export default function StudentDashboard() {
         <div className="nav-user-actions">
           <div className="user-profile-badge">
             <div className="avatar-circle" style={{ background: 'linear-gradient(135deg, #3E0F8D, #9564DD)', color: 'white' }}>
-              {getInitials(currentUser.name)}
+              {getInitials(currentUser?.name || 'Student')}
             </div>
             <div className="user-meta-text">
-              <span className="user-name-text">{currentUser.name}</span>
-              <span className="user-email-sub">{currentUser.email}</span>
+              <span className="user-name-text">{currentUser?.name || 'Student'}</span>
+              <span className="user-email-sub">{currentUser?.email || ''}</span>
             </div>
           </div>
           <button
@@ -138,7 +138,7 @@ export default function StudentDashboard() {
         {/* Hero Welcome Banner */}
         <section className="dashboard-hero-banner" style={{ background: 'linear-gradient(135deg, #2A0864 0%, #3E0F8D 100%)' }}>
           <div className="hero-banner-content">
-            <h1 className="hero-banner-title">Welcome back, {currentUser.name.split(' ')[0]}! 🚀</h1>
+            <h1 className="hero-banner-title">Welcome back, {(currentUser?.name || 'Student').split(' ')[0]}! 🚀</h1>
             <p className="hero-banner-subtitle">
               {profile?.tutorId?.name ? (
                 <>Assigned Tutor: <strong>{profile.tutorId.name}</strong> • Subject: <strong>{profile.subject}</strong></>

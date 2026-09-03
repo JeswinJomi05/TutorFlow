@@ -18,7 +18,8 @@ const loginUser = async ({ email, password, role }) => {
   const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
   if (!user) {
-    throw ApiError.unauthorized('Invalid email or password');
+    console.log(user)
+    throw ApiError.unauthorized('Invalid email or password'+ user);
   }
 
   if (!user.isActive) {
