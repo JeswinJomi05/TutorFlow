@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Lock, ShieldCheck, ArrowRight, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import InputField from './InputField';
 import PasswordInput from './PasswordInput';
 import RoleSelector from './RoleSelector';
@@ -10,14 +10,10 @@ const roleContent = {
   tutor: {
     heading: 'Welcome back, Tutor',
     subheading: 'Log in to manage your scheduled sessions, student track records, and lesson plans.',
-    demoEmail: 'tutor@tutorflow.com',
-    demoPassword: 'Tutor@123',
   },
   student: {
     heading: 'Welcome back, Student',
     subheading: 'Log in to view upcoming tutoring sessions, assignments, and homework feedback.',
-    demoEmail: 'student@tutorflow.com',
-    demoPassword: 'Student@123',
   },
 };
 
@@ -55,14 +51,6 @@ export default function LoginForm({ onLoginSuccess, isLoading: parentLoading }) 
     if (errors.password) {
       setErrors((prev) => ({ ...prev, password: '' }));
     }
-  };
-
-  const handleQuickFill = (role) => {
-    setSelectedRole(role);
-    setEmail(roleContent[role].demoEmail);
-    setPassword(roleContent[role].demoPassword);
-    setErrors({});
-    setGeneralError('');
   };
 
   const handleSubmit = async (e) => {
@@ -127,29 +115,6 @@ export default function LoginForm({ onLoginSuccess, isLoading: parentLoading }) 
 
       {/* Role Selector */}
       <RoleSelector selectedRole={selectedRole} onRoleChange={handleRoleChange} />
-
-      {/* Demo Credentials Helper Pill */}
-      <div className="demo-helper-bar">
-        <span className="demo-helper-label">
-          <Sparkles size={13} className="sparkle-icon" /> Quick Demo Fill:
-        </span>
-        <button
-          type="button"
-          className={`demo-pill ${selectedRole === 'tutor' ? 'active-pill' : ''}`}
-          onClick={() => handleQuickFill('tutor')}
-          disabled={isLoading}
-        >
-          Tutor Demo
-        </button>
-        <button
-          type="button"
-          className={`demo-pill ${selectedRole === 'student' ? 'active-pill' : ''}`}
-          onClick={() => handleQuickFill('student')}
-          disabled={isLoading}
-        >
-          Student Demo
-        </button>
-      </div>
 
       {/* General Error Message */}
       {generalError && (
