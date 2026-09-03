@@ -1,7 +1,6 @@
 const User = require('../models/User');
 const ApiError = require('../utils/apiError');
 const { generateToken, getCookieOptions } = require('../utils/generateToken');
-
 /**
  * Authenticate user credentials and issue token
  * @param {Object} credentials - { email, password, role }
@@ -16,6 +15,8 @@ const loginUser = async ({ email, password, role }) => {
 
   // Find user and explicitly select password
   const user = await User.findOne({ email: normalizedEmail }).select('+password');
+
+
 
   if (!user) {
     console.log(user)
