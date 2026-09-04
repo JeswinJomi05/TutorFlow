@@ -7,8 +7,7 @@ const ApiError = require('../utils/apiError');
 const VALID_TRANSITIONS = {
   scheduled: ['in_progress'],
   in_progress: ['completed'],
-  completed: ['ai_reviewed'],
-  ai_reviewed: [],
+  completed: [],
 };
 
 /**
@@ -25,7 +24,7 @@ const validateStatusTransition = (currentStatus, newStatus) => {
 
   if (!allowedNextStatuses.includes(newStatus)) {
     throw ApiError.badRequest(
-      `Invalid session status transition from '${currentStatus}' to '${newStatus}'. Allowed flow: scheduled -> in_progress -> completed -> ai_reviewed`
+      `Invalid session status transition from '${currentStatus}' to '${newStatus}'. Allowed flow: scheduled -> in_progress -> completed`
     );
   }
 };
@@ -35,7 +34,7 @@ const validateStatusTransition = (currentStatus, newStatus) => {
  * @param {string} currentStatus
  */
 const validateNotesEditable = (currentStatus) => {
-  if (currentStatus === 'completed' || currentStatus === 'ai_reviewed') {
+  if (currentStatus === 'completed') {
     throw ApiError.badRequest(
       'Session notes are read-only and cannot be modified once the session is completed'
     );

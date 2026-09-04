@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const ApiError = require('../utils/apiError');
 const asyncHandler = require('../utils/asyncHandler');
+const { useId } = require('react');
 
 /**
  * Authentication middleware that verifies JWT from Authorization header or HTTP-only cookies
@@ -41,6 +42,7 @@ const requireAuth = asyncHandler(async (req, res, next) => {
 
     // Query database for fresh user status (excluding password)
     const user = await User.findById(userId).select('-password');
+    
 
     if (!user) {
       throw ApiError.unauthorized('User associated with this token no longer exists.');
