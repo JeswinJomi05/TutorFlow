@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
-  Calendar, 
   CheckCircle2, 
   Award, 
   LogOut, 
   Video, 
   Clock, 
   FileText, 
-  Sparkles,
-  Loader2 
+  Loader2,
+  X,
+  RefreshCw
 } from 'lucide-react';
 import authService from '../services/authService';
 import studentService from '../services/studentService';
@@ -25,7 +25,9 @@ export default function StudentDashboard() {
   const [profile, setProfile] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [homework, setHomework] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState({ profile: true, sessions: true, homework: true });
+  const [errors, setErrors] = useState({});
+  const [selectedSession, setSelectedSession] = useState(null);
 
   useEffect(() => {
     const role = authService.getUserRole();
@@ -34,48 +36,29 @@ export default function StudentDashboard() {
       return;
     }
 
-    const loadData = async () => {
-      try {
-        const meRes = await authService.getMe();
-        if (meRes.user) {
-          setCurrentUser(meRes.user);
-        }
-      } catch (err) {
-        console.warn('Failed to refresh student profile:', err);
-      }
-
-      try {
-        const profileRes = await studentService.getProfile();
-        if (profileRes.data) {
-          setProfile(profileRes.data);
-        }
-      } catch (err) {
-        console.warn('Failed to load profile details:', err);
-      }
-
-      try {
-        const sessionsRes = await studentService.getSessions();
-        if (sessionsRes.data) {
-          setSessions(sessionsRes.data);
-        }
-      } catch (err) {
-        console.warn('Failed to load student sessions:', err);
-      }
-
-      try {
-        const hwRes = await studentService.getHomework();
-        if (hwRes.data) {
-          setHomework(hwRes.data);
-        }
-      } catch (err) {
-        console.warn('Failed to load student homework:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadData();
   }, [navigate]);
+
+  async function loadData() {
+    setLoading({ profile: true, sessions: true, homework: true });
+    setErrors({});
+    const requests = [
+      ['profile', authService.getMe().then((result) => result.user && setCurrentUser(result.user)), 'Unable to load your profile.'],
+      ['profile', studentService.getProfile().then((result) => setProfile(result.data)), 'Unable to load your profile.'],
+      ['sessions', studentService.getSessions().then((result) => setSessions(result.data || [])), 'Unable to load sessions.'],
+      ['homework', studentService.getHomework().then((result) => setHomework(result.data || [])), 'Unable to load homework.'],
+    ];
+
+    await Promise.all(requests.map(async ([section, request, message]) => {
+      try {
+        await request;
+      } catch {
+        setErrors((previous) => ({ ...previous, [section]: message }));
+      } finally {
+        setLoading((previous) => ({ ...previous, [section]: false }));
+      }
+    }));
+  }
 
   const handleLogout = () => {
     authService.logout();
@@ -92,13 +75,16 @@ export default function StudentDashboard() {
   };
 
   const formatSessionTime = (isoDate) => {
-    try {
-      const d = new Date(isoDate);
-      return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return 'Upcoming';
-    }
+    const d = new Date(isoDate);
+    return `${d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
   };
+
+  const upcomingSessions = sessions
+    .filter((session) => session.status === 'in_progress' || (session.status === 'scheduled' && new Date(session.scheduledAt) >= new Date()))
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+  const completedSessions = sessions.filter((session) => session.status === 'completed' || session.status === 'ai_reviewed');
+  const tutor = profile?.tutorId;
+  const liveSession = sessions.find((session) => session.status === 'in_progress');
 
   return (
     <div className="dashboard-container">
@@ -141,17 +127,19 @@ export default function StudentDashboard() {
             <h1 className="hero-banner-title">Welcome back, {(currentUser?.name || 'Student').split(' ')[0]}! 🚀</h1>
             <p className="hero-banner-subtitle">
               {profile?.tutorId?.name ? (
-                <>Assigned Tutor: <strong>{profile.tutorId.name}</strong> • Subject: <strong>{profile.subject}</strong></>
+                <>Assigned Tutor: <strong>{tutor.name}</strong> • Subject: <strong>{profile.subject}</strong></>
               ) : (
-                <>You have live tutoring sessions and learning goals managed in your portal.</>
+                <>No tutor assigned yet.</>
               )}
             </p>
           </div>
-          <button className="hero-quick-action-btn">
+          <button className="hero-quick-action-btn" onClick={() => liveSession && setSelectedSession(liveSession)} disabled={!liveSession} title={liveSession ? 'Open your live session' : 'No live study room is available'}>
             <Video size={18} />
             <span>Join Study Room</span>
           </button>
         </section>
+
+        {errors.profile && <div className="student-notice student-state-error">{errors.profile}<button onClick={loadData}><RefreshCw size={15} /> Retry</button></div>}
 
         {/* Metric Cards */}
         <section className="metrics-grid" aria-label="Key Student Metrics">
@@ -161,7 +149,7 @@ export default function StudentDashboard() {
             </div>
             <div className="metric-info">
               <span className="metric-label">Enrolled Subject</span>
-              <span className="metric-value">{profile?.subject || 'Calculus BC'}</span>
+                <span className="metric-value">{loading.profile ? 'Loading...' : profile?.subject || 'Not set'}</span>
             </div>
           </div>
 
@@ -171,7 +159,7 @@ export default function StudentDashboard() {
             </div>
             <div className="metric-info">
               <span className="metric-label">Total Sessions</span>
-              <span className="metric-value">{sessions.length || 3}</span>
+              <span className="metric-value">{loading.sessions ? '...' : sessions.length}</span>
             </div>
           </div>
 
@@ -181,7 +169,7 @@ export default function StudentDashboard() {
             </div>
             <div className="metric-info">
               <span className="metric-label">Current Level</span>
-              <span className="metric-value">{profile?.currentLevel || 'Advanced'}</span>
+              <span className="metric-value">{loading.profile ? '...' : profile?.currentLevel || 'Not set'}</span>
             </div>
           </div>
 
@@ -191,7 +179,7 @@ export default function StudentDashboard() {
             </div>
             <div className="metric-info">
               <span className="metric-label">Assigned Homework</span>
-              <span className="metric-value">{homework.length || 2} Tasks</span>
+              <span className="metric-value">{loading.homework ? '...' : `${homework.length} Tasks`}</span>
             </div>
           </div>
         </section>
@@ -208,18 +196,17 @@ export default function StudentDashboard() {
             </div>
 
             <div className="sessions-list">
-              {isLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px', gap: '8px', color: 'var(--color-primary-dark)' }}>
-                  <Loader2 size={20} className="animate-spin" />
-                  <span>Loading sessions from server...</span>
-                </div>
-              ) : sessions.length > 0 ? (
-                sessions.map((session) => (
+              {loading.sessions ? (
+                <div className="student-state"><Loader2 size={20} className="animate-spin" />Loading sessions...</div>
+              ) : errors.sessions ? (
+                <div className="student-state student-state-error">{errors.sessions}<button onClick={loadData}><RefreshCw size={15} /> Retry</button></div>
+              ) : upcomingSessions.length > 0 ? (
+                upcomingSessions.map((session) => (
                   <div key={session._id || session.id} className="session-item-card">
                     <div className="session-left">
                       <div className="session-avatar">{getInitials(session.tutorId?.name || 'Tutor')}</div>
                       <div className="session-details">
-                        <span className="session-subject">{session.topic}</span>
+                        <span className="session-subject">{profile?.subject || session.topic}</span>
                         <span className="session-person">Tutor: {session.tutorId?.name || 'Assigned Tutor'}</span>
                       </div>
                     </div>
@@ -227,7 +214,8 @@ export default function StudentDashboard() {
                       <span className="session-time-pill">
                         <Clock size={13} /> {formatSessionTime(session.scheduledAt)}
                       </span>
-                      <button className="join-session-btn">
+                      <span className={`student-status ${session.status}`}>{session.status.replace('_', ' ')}</span>
+                      <button className="join-session-btn" onClick={() => setSelectedSession(session)}>
                         {session.status === 'in_progress' ? 'Join Live' : 'Details'}
                       </button>
                     </div>
@@ -235,7 +223,7 @@ export default function StudentDashboard() {
                 ))
               ) : (
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '13.5px' }}>
-                  No upcoming sessions scheduled yet.
+                  No upcoming sessions scheduled.
                 </div>
               )}
             </div>
@@ -244,15 +232,14 @@ export default function StudentDashboard() {
           {/* Pending Assignments / Homework */}
           <aside className="dashboard-panel">
             <div className="panel-header">
-              <h2 className="panel-title">AI Feedback & Homework</h2>
+              <h2 className="panel-title">Homework</h2>
             </div>
 
             <div className="sessions-list">
-              {isLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px', gap: '8px', color: 'var(--color-primary-dark)' }}>
-                  <Loader2 size={20} className="animate-spin" />
-                  <span>Loading homework...</span>
-                </div>
+              {loading.homework ? (
+                <div className="student-state"><Loader2 size={20} className="animate-spin" />Loading homework...</div>
+              ) : errors.homework ? (
+                <div className="student-state student-state-error">{errors.homework}<button onClick={loadData}><RefreshCw size={15} /> Retry</button></div>
               ) : homework.length > 0 ? (
                 homework.map((task) => (
                   <div key={task.id} className="session-item-card" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
@@ -266,9 +253,7 @@ export default function StudentDashboard() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', fontSize: '12px', color: 'var(--color-text-muted)' }}>
                       <span>From: {task.tutorName}</span>
-                      <button style={{ padding: '4px 10px', fontSize: '11.5px', fontWeight: '600', backgroundColor: 'var(--color-purple-light)', color: 'var(--color-primary-dark)', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
-                        Upload Work
-                      </button>
+                        <span className="student-status pending">Pending</span>
                     </div>
                   </div>
                 ))
@@ -280,7 +265,23 @@ export default function StudentDashboard() {
             </div>
           </aside>
         </div>
+
+        <section className="dashboard-panel notes-panel">
+          <div className="panel-header"><h2 className="panel-title">Past Session Notes</h2></div>
+          {loading.sessions ? <div className="student-state"><Loader2 size={20} className="animate-spin" />Loading notes...</div> : completedSessions.length ? (
+            <div className="notes-list">{completedSessions.map((session) => <article className="note-card" key={session._id || session.id}>
+              <strong>{profile?.subject || session.topic}</strong><span>Tutor: {session.tutorId?.name || 'Assigned Tutor'}</span><time>{formatSessionTime(session.scheduledAt)}</time><h3>Session Notes</h3><p>{session.notes || 'No notes were recorded for this session.'}</p>
+            </article>)}</div>
+          ) : <div className="student-empty">No completed sessions yet.</div>}
+        </section>
       </main>
+
+      {selectedSession && <div className="student-modal-backdrop" role="presentation" onClick={() => setSelectedSession(null)}><section className="student-modal" role="dialog" aria-modal="true" aria-labelledby="session-details-title" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-header"><div><span className="eyebrow">Session details</span><h2 id="session-details-title">{profile?.subject || selectedSession.topic}</h2></div><button className="modal-close" onClick={() => setSelectedSession(null)} aria-label="Close session details"><X size={20} /></button></div>
+        <dl className="session-detail-grid"><div><dt>Tutor</dt><dd>{selectedSession.tutorId?.name || 'Assigned Tutor'}</dd></div><div><dt>Date</dt><dd>{new Date(selectedSession.scheduledAt).toLocaleDateString()}</dd></div><div><dt>Time</dt><dd>{new Date(selectedSession.scheduledAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</dd></div><div><dt>Status</dt><dd><span className={`student-status ${selectedSession.status}`}>{selectedSession.status.replace('_', ' ')}</span></dd></div></dl>
+        <div className="session-topic"><strong>Topic</strong><p>{selectedSession.topic}</p></div>
+        {completedSessions.some((session) => (session._id || session.id) === (selectedSession._id || selectedSession.id)) && <div className="session-topic"><strong>Session notes</strong><p>{selectedSession.notes || 'No notes were recorded for this session.'}</p></div>}
+      </section></div>}
     </div>
   );
 }

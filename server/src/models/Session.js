@@ -25,7 +25,7 @@ const sessionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ['scheduled', 'in_progress', 'completed'],
+        values: ['scheduled', 'in_progress', 'completed', 'ai_reviewed'],
         message: '{VALUE} is not a valid session status',
       },
       default: 'scheduled',

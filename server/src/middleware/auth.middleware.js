@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const ApiError = require('../utils/apiError');
 const asyncHandler = require('../utils/asyncHandler');
-const { useId } = require('react');
 
 /**
  * Authentication middleware that verifies JWT from Authorization header or HTTP-only cookies

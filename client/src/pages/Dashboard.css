@@ -187,6 +187,10 @@
   background-color: #F0E885;
 }
 
+.hero-quick-action-btn:disabled { cursor: not-allowed; opacity: .65; transform: none; }
+.student-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--color-white); border: 1px solid var(--color-error-border); border-radius: var(--radius-md); }
+.student-notice button { display: inline-flex; align-items: center; gap: 6px; color: var(--color-primary-dark); font-weight: 700; }
+
 /* Metrics Cards Grid */
 .metrics-grid {
   display: grid;
@@ -420,6 +424,46 @@
   margin-top: 2px;
 }
 
+.student-state,
+.student-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 80px;
+  padding: 18px;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.student-state-error { flex-direction: column; color: var(--color-error); }
+.student-state button { display: inline-flex; align-items: center; gap: 6px; color: var(--color-primary-dark); font-weight: 700; }
+.student-status { display: inline-flex; padding: 4px 8px; border-radius: var(--radius-full); font-size: 11px; font-weight: 700; text-transform: capitalize; white-space: nowrap; }
+.student-status.scheduled { background: #EDE9FE; color: #5B21B6; }
+.student-status.in_progress { background: #FEF3C7; color: #92400E; }
+.student-status.completed { background: #DCFCE7; color: #166534; }
+.student-status.ai_reviewed { background: #DBEAFE; color: #1E40AF; }
+.student-status.pending { background: #FEF3C7; color: #92400E; }
+.notes-panel { margin-top: 0; }
+.notes-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.note-card { display: flex; flex-direction: column; gap: 7px; padding: 16px; background: #F8FAFC; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); }
+.note-card strong { color: var(--color-text-dark); }
+.note-card span, .note-card time { color: var(--color-text-muted); font-size: 12px; }
+.note-card h3 { margin-top: 8px; color: var(--color-text-dark); font-size: 12px; }
+.note-card p { color: var(--color-text-muted); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.student-modal-backdrop { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(25, 10, 56, .48); }
+.student-modal { width: min(560px, 100%); max-height: 90vh; overflow-y: auto; padding: 26px; background: var(--color-white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.modal-header { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.modal-header h2 { margin-top: 5px; color: var(--color-text-dark); font-size: 22px; }
+.modal-close { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; color: var(--color-text-muted); border: 1px solid var(--color-border-light); border-radius: var(--radius-sm); }
+.session-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border-light); }
+.session-detail-grid dt { margin-bottom: 5px; color: var(--color-text-light); font-size: 11px; text-transform: uppercase; font-weight: 700; }
+.session-detail-grid dd { color: var(--color-text-dark); font-size: 14px; font-weight: 600; }
+.session-topic { padding-top: 18px; }
+.session-topic strong { color: var(--color-text-dark); font-size: 13px; }
+.session-topic p { margin-top: 7px; color: var(--color-text-muted); font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+
 @media (max-width: 900px) {
   .dashboard-grid-sections {
     grid-template-columns: 1fr;
@@ -438,4 +482,23 @@
     align-items: flex-start;
     gap: 18px;
   }
+
+  .session-item-card { align-items: flex-start; gap: 14px; }
+  .session-right { flex-wrap: wrap; justify-content: flex-end; }
+}
+
+@media (max-width: 600px) {
+  .dashboard-main { padding: 22px 14px; }
+  .dashboard-navbar { align-items: flex-start; gap: 12px; }
+  .nav-brand-group { gap: 7px; }
+  .nav-brand-title { font-size: 17px; }
+  .nav-role-tag { display: none; }
+  .nav-user-actions { gap: 8px; }
+  .user-meta-text { display: none; }
+  .logout-nav-button span { display: none; }
+  .dashboard-hero-banner { padding: 24px; }
+  .hero-banner-title { font-size: 22px; }
+  .session-item-card { flex-direction: column; }
+  .session-right { width: 100%; justify-content: flex-start; }
+  .session-detail-grid { grid-template-columns: 1fr; }
 }
