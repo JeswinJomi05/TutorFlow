@@ -63,6 +63,11 @@ const authService = {
    * Logout user and clear local cache
    */
   logout: async () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userData');
+
     try {
       await api.post('/auth/logout');
     } catch {

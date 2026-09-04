@@ -2,6 +2,7 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const {
   createSession,
+  getSessions,
   getSessionById,
   updateSessionStatus,
   updateSessionNotes,
@@ -40,8 +41,8 @@ const updateStatusValidation = [
   body('status')
     .notEmpty()
     .withMessage('Status is required')
-    .isIn(['scheduled', 'in_progress', 'completed', 'ai_reviewed'])
-    .withMessage('Invalid status value. Allowed: scheduled, in_progress, completed, ai_reviewed'),
+    .isIn(['in_progress', 'completed'])
+    .withMessage('Invalid status value. Allowed: in_progress, completed'),
 ];
 
 const sessionIdParamValidation = [
@@ -50,7 +51,8 @@ const sessionIdParamValidation = [
 
 // Session routes
 router.post('/', requireRole('tutor'), validate(createSessionValidation), createSession);
-router.get('/:sessionId', validate(sessionIdParamValidation), getSessionById);
+router.get('/', requireRole('tutor'), getSessions);
+router.get('/:sessionId', requireRole('tutor'), validate(sessionIdParamValidation), getSessionById);
 router.patch('/:sessionId/status', requireRole('tutor'), validate(updateStatusValidation), updateSessionStatus);
 router.patch('/:sessionId/notes', requireRole('tutor'), validate(sessionIdParamValidation), updateSessionNotes);
 

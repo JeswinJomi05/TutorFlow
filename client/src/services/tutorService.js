@@ -41,6 +41,11 @@ const tutorService = {
     return response.data;
   },
 
+  getSessions: async () => {
+    const response = await api.get('/sessions');
+    return response.data;
+  },
+
   /**
    * Update session status
    */
@@ -55,9 +60,9 @@ const tutorService = {
   /**
    * Update session live notes
    */
-  updateSessionNotes: async (sessionId, liveNotes) => {
+  updateSessionNotes: async (sessionId, notes) => {
     const response = await api.patch(`/sessions/${sessionId}/notes`, {
-      liveNotes,
+      notes,
     });
     return response.data;
   },

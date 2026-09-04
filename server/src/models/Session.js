@@ -25,7 +25,7 @@ const sessionSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ['scheduled', 'in_progress', 'completed', 'ai_reviewed'],
+        values: ['scheduled', 'in_progress', 'completed'],
         message: '{VALUE} is not a valid session status',
       },
       default: 'scheduled',
@@ -35,32 +35,14 @@ const sessionSchema = new mongoose.Schema(
       default: '',
     },
     aiPlan: {
-      learningObjectives: {
-        type: [String],
-        default: [],
-      },
-      lessonOutline: {
-        type: [String],
-        default: [],
-      },
-      practiceQuestions: {
-        type: [String],
-        default: [],
-      },
+      learningObjectives: { type: [String], default: [] },
+      lessonOutline: { type: [String], default: [] },
+      practiceQuestions: { type: [String], default: [] },
     },
     aiReview: {
-      summary: {
-        type: String,
-        default: '',
-      },
-      homework: {
-        type: [String],
-        default: [],
-      },
-      nextSessionSuggestion: {
-        type: String,
-        default: '',
-      },
+      summary: { type: String, default: '' },
+      homework: { type: [String], default: [] },
+      nextSessionSuggestion: { type: String, default: '' },
     },
   },
   {

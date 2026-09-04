@@ -1,266 +1,206 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  Calendar, 
-  Clock, 
-  Award, 
-  LogOut, 
-  PlusCircle, 
-  Video, 
-  CheckCircle2, 
-  BookOpen,
-  Loader2
-} from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { CalendarDays, Plus, Users, CheckCircle, RefreshCw, Clock } from 'lucide-react';
 import authService from '../services/authService';
 import tutorService from '../services/tutorService';
-import './Dashboard.css';
+import TutorLayout, { Button, EmptyState, ErrorState, Loading, PageHeader, StatusBadge } from '../components/TutorLayout';
+import { formatDate, formatTime, getError } from '../components/tutorUtils';
+import './TutorPages.css';
+import './TutorDashboard.css';
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function MetricCard({ icon: Icon, label, value, accent }) {
+  return (
+    <div className={`metric-card${accent ? ` metric-card--${accent}` : ''}`}>
+      <div className="metric-icon">
+        <Icon size={20} />
+      </div>
+      <div>
+        <span>{label}</span>
+        <strong>{value ?? '—'}</strong>
+      </div>
+    </div>
+  );
+}
 
 export default function TutorDashboard() {
+  const [students, setStudents] = useState(null);
+  const [sessions, setSessions] = useState(null);
+  const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(authService.getUser() || {
-    name: 'Prof. Sarah Jenkins',
-    email: 'tutor@tutorflow.com',
-  });
-  const [students, setStudents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const user = authService.getUser() || {};
+
+  const loadDashboard = useCallback(async (silent = false) => {
+    if (!silent) {
+      setStudents(null);
+      setSessions(null);
+      setError('');
+    }
+    setRefreshing(true);
+    try {
+      const [studentRes, sessionRes] = await Promise.all([
+        tutorService.getStudents(),
+        tutorService.getSessions(),
+      ]);
+      setStudents(studentRes.data || []);
+      setSessions(sessionRes.data || []);
+      setError('');
+    } catch (err) {
+      setError(getError(err, 'Unable to load dashboard. Please try again.'));
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const role = authService.getUserRole();
-    if (role !== 'tutor' || !authService.isAuthenticated()) {
-      navigate('/login');
-      return;
-    }
+    loadDashboard();
+  }, [loadDashboard]);
 
-    const loadData = async () => {
-      try {
-        const meRes = await authService.getMe();
-        if (meRes.user) {
-          setCurrentUser(meRes.user);
-        }
-      } catch (err) {
-        console.warn('Failed to refresh user profile:', err);
-      }
-
-      try {
-        const studentsRes = await tutorService.getStudents();
-        if (studentsRes.data) {
-          setStudents(studentsRes.data);
-        }
-      } catch (err) {
-        console.warn('Failed to load students:', err);
-      } finally {
-        setIsLoading(false);
-      }
+  // Silently refresh when user returns to the tab
+  useEffect(() => {
+    const handleFocus = () => {
+      if (students !== null) loadDashboard(true);
     };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [students, loadDashboard]);
 
-    loadData();
-  }, [navigate]);
+  if (students === null || sessions === null) {
+    return <TutorLayout><Loading label="Loading dashboard..." /></TutorLayout>;
+  }
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
-  };
+  if (error && students === null) {
+    return (
+      <TutorLayout>
+        <ErrorState message={error} />
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+          <Button onClick={() => loadDashboard()}>Retry</Button>
+        </div>
+      </TutorLayout>
+    );
+  }
 
-  const getInitials = (name = '') => {
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || 'TU';
-  };
+  const upcoming = sessions
+    .filter((s) => s.status === 'scheduled' || s.status === 'in_progress')
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
-  const upcomingSessions = [
-    {
-      id: 1,
-      studentName: students.length > 0 ? students[0].name : 'Alex Rivera',
-      subject: students.length > 0 && students[0].profile?.subject ? students[0].profile.subject : 'AP Calculus BC: Derivatives & Integrals',
-      time: 'Today, 4:00 PM',
-      duration: '60 min',
-      avatar: students.length > 0 ? getInitials(students[0].name) : 'AR',
-    },
-    {
-      id: 2,
-      studentName: 'Maya Lin',
-      subject: 'Organic Chemistry: Reaction Mechanisms',
-      time: 'Tomorrow, 2:30 PM',
-      duration: '45 min',
-      avatar: 'ML',
-    },
-    {
-      id: 3,
-      studentName: 'David Chen',
-      subject: 'Physics: Electromagnetism & Waves',
-      time: 'Wed, 5:00 PM',
-      duration: '60 min',
-      avatar: 'DC',
-    },
-  ];
+  const todayCount = upcoming.filter(
+    (s) => new Date(s.scheduledAt).toDateString() === new Date().toDateString()
+  ).length;
+
+  const completedCount = sessions.filter((s) => s.status === 'completed').length;
+
+  const firstName = (user.name || 'Tutor').split(' ')[0];
 
   return (
-    <div className="dashboard-container">
-      {/* Top Navbar */}
-      <header className="dashboard-navbar">
-        <div className="nav-brand-group">
-          <div className="nav-logo-badge">TF</div>
-          <span className="nav-brand-title">TutorFlow</span>
-          <span className="nav-role-tag">Tutor Portal</span>
+    <TutorLayout>
+      <div className="dashboard-header-row">
+        <PageHeader
+          eyebrow="Tutor dashboard"
+          title={`${getGreeting()}, ${firstName}`}
+          description="Here's an overview of your students and upcoming sessions."
+          action={
+            <div className="dashboard-actions">
+              <button
+                className={`refresh-btn${refreshing ? ' refreshing' : ''}`}
+                onClick={() => loadDashboard(true)}
+                title="Refresh dashboard"
+                disabled={refreshing}
+              >
+                <RefreshCw size={15} />
+              </button>
+              <Button onClick={() => navigate('/tutor/sessions/new')}>
+                <Plus size={17} />
+                Schedule Session
+              </Button>
+            </div>
+          }
+        />
+      </div>
+
+      {error && (
+        <div className="dashboard-notice dashboard-notice--warn">
+          {error}
+          <button onClick={() => loadDashboard(true)}>Retry</button>
         </div>
+      )}
 
-        <div className="nav-user-actions">
-          <div className="user-profile-badge">
-            <div className="avatar-circle">{getInitials(currentUser.name)}</div>
-            <div className="user-meta-text">
-              <span className="user-name-text">{currentUser.name}</span>
-              <span className="user-email-sub">{currentUser.email}</span>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="logout-nav-button"
-            title="Log out"
-          >
-            <LogOut size={16} />
-            <span>Sign Out</span>
-          </button>
+      <section className="metrics-grid">
+        <MetricCard icon={Users} label="Total Students" value={students.length} />
+        <MetricCard icon={CalendarDays} label="Upcoming Sessions" value={upcoming.length} accent="purple" />
+        <MetricCard icon={Clock} label="Today's Sessions" value={todayCount} accent="yellow" />
+        <MetricCard icon={CheckCircle} label="Completed Sessions" value={completedCount} accent="green" />
+      </section>
+
+      <section className="info-panel dashboard-section">
+        <div className="section-heading">
+          <h2>Upcoming Sessions</h2>
+          <Link className="text-link" to="/tutor/sessions">View all</Link>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="dashboard-main">
-        {/* Hero Welcome Banner */}
-        <section className="dashboard-hero-banner">
-          <div className="hero-banner-content">
-            <h1 className="hero-banner-title">Welcome back, {currentUser.name.split(' ')[0]}! 👋</h1>
-            <p className="hero-banner-subtitle">
-              You have <strong>{students.length || 3} assigned student(s)</strong> connected to your backend workspace.
-            </p>
-          </div>
-          <button className="hero-quick-action-btn">
-            <PlusCircle size={18} />
-            <span>Schedule Session</span>
-          </button>
-        </section>
-
-        {/* Metric Cards */}
-        <section className="metrics-grid" aria-label="Key Tutor Metrics">
-          <div className="metric-card">
-            <div className="metric-icon-box">
-              <Users size={24} />
-            </div>
-            <div className="metric-info">
-              <span className="metric-label">Active Students</span>
-              <span className="metric-value">{students.length || 1}</span>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-icon-box accent-green">
-              <Calendar size={24} />
-            </div>
-            <div className="metric-info">
-              <span className="metric-label">Sessions Completed</span>
-              <span className="metric-value">142</span>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-icon-box accent-blue">
-              <Clock size={24} />
-            </div>
-            <div className="metric-info">
-              <span className="metric-label">Total Teaching Hours</span>
-              <span className="metric-value">210 hrs</span>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-icon-box accent-yellow">
-              <Award size={24} />
-            </div>
-            <div className="metric-info">
-              <span className="metric-label">Tutor Rating</span>
-              <span className="metric-value">4.96 ★</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Sessions & Activity Split */}
-        <div className="dashboard-grid-sections">
-          {/* Upcoming Sessions */}
-          <section className="dashboard-panel">
-            <div className="panel-header">
-              <h2 className="panel-title">Upcoming Tutoring Sessions</h2>
-              <a href="#all-sessions" className="panel-action-link">View All Calendar</a>
-            </div>
-
-            <div className="sessions-list">
-              {isLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px', gap: '8px', color: 'var(--color-primary-dark)' }}>
-                  <Loader2 size={20} className="animate-spin" />
-                  <span>Connecting to backend...</span>
+        {upcoming.length ? (
+          <div className="session-list">
+            {upcoming.slice(0, 5).map((session) => (
+              <Link
+                className="session-row"
+                key={session._id}
+                to={`/tutor/sessions/${session._id}`}
+              >
+                <div>
+                  <strong>{session.studentId?.name || 'Student'}</strong>
+                  <span>{session.topic}</span>
                 </div>
-              ) : (
-                upcomingSessions.map((session) => (
-                  <div key={session.id} className="session-item-card">
-                    <div className="session-left">
-                      <div className="session-avatar">{session.avatar}</div>
-                      <div className="session-details">
-                        <span className="session-subject">{session.subject}</span>
-                        <span className="session-person">Student: {session.studentName}</span>
-                      </div>
-                    </div>
-                    <div className="session-right">
-                      <span className="session-time-pill">
-                        <Clock size={13} /> {session.time}
-                      </span>
-                      <button className="join-session-btn" title="Launch Video Classroom">
-                        <Video size={13} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                        Launch
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* Connected Students Roster */}
-          <aside className="dashboard-panel">
-            <div className="panel-header">
-              <h2 className="panel-title">Your Students</h2>
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                {students.length} Registered
-              </span>
-            </div>
-
-            <div className="activity-list">
-              {students.length > 0 ? (
-                students.map((student) => (
-                  <div key={student._id || student.id} className="activity-item">
-                    <div className="activity-bullet" style={{ backgroundColor: 'var(--color-success)' }}></div>
-                    <div>
-                      <p className="activity-text">
-                        <strong>{student.name}</strong> ({student.profile?.subject || 'All Subjects'})
-                      </p>
-                      <p className="activity-time">Level: {student.profile?.currentLevel || 'Standard'}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="activity-item">
-                  <div className="activity-bullet"></div>
-                  <div>
-                    <p className="activity-text"><strong>Alex Rivera</strong> submitted homework for Calculus.</p>
-                    <p className="activity-time">25 mins ago</p>
-                  </div>
+                <div>
+                  <span>{formatDate(session.scheduledAt)} · {formatTime(session.scheduledAt)}</span>
+                  <StatusBadge status={session.status} />
                 </div>
-              )}
-            </div>
-          </aside>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No upcoming sessions"
+            text="Schedule a session to get started."
+            action={<Button onClick={() => navigate('/tutor/sessions/new')}>Schedule Session</Button>}
+          />
+        )}
+      </section>
+
+      <section className="info-panel dashboard-section">
+        <div className="section-heading">
+          <h2>Students</h2>
+          <Link className="text-link" to="/tutor/students">View all</Link>
         </div>
-      </main>
-    </div>
+        {students.length ? (
+          <div className="data-list">
+            {students.slice(0, 4).map((student) => (
+              <Link className="data-row" key={student._id} to={`/tutor/students/${student._id}`}>
+                <div>
+                  <strong>{student.name}</strong>
+                  <span>{student.profile?.subject} · {student.profile?.currentLevel}</span>
+                </div>
+                <span className="text-link">View Profile →</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No students yet"
+            text="Add a student to start managing their sessions."
+            action={
+              <Button onClick={() => navigate('/tutor/students/new')}>
+                <Plus size={17} />Add Student
+              </Button>
+            }
+          />
+        )}
+      </section>
+    </TutorLayout>
   );
 }

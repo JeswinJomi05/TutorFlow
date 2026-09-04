@@ -20,13 +20,14 @@ const login = asyncHandler(async (req, res) => {
 
   // Attach HTTP-only cookie for secure browser sessions
   res.cookie('token', token, cookieOptions);
-
+  
   return res.status(200).json({
     success: true,
     token,
     user,
     message: 'Login successful',
   });
+
 });
 
 /**

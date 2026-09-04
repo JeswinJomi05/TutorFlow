@@ -15,8 +15,7 @@ const loginUser = async ({ email, password, role }) => {
 
   // Find user and explicitly select password
   const user = await User.findOne({ email: normalizedEmail }).select('+password');
-
-
+  
 
   if (!user) {
     console.log(user)

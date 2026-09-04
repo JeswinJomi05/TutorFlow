@@ -14,7 +14,7 @@ const {
  * @access  Private (Tutor only)
  */
 const createSession = asyncHandler(async (req, res) => {
-  const { studentId, scheduledAt, topic, notes, aiPlan } = req.body;
+  const { studentId, scheduledAt, topic } = req.body;
 
   // 1. Verify student exists and belongs to this tutor
   const student = await User.findOne({
@@ -28,21 +28,20 @@ const createSession = asyncHandler(async (req, res) => {
   }
 
   // 2. Check for tutor scheduling conflicts
-  await checkSchedulingConflict(req.user._id, scheduledAt);
+  const parsedDate = new Date(scheduledAt);
+  if (Number.isNaN(parsedDate.getTime()) || parsedDate <= new Date()) {
+    throw ApiError.badRequest('Session date and time must be in the future');
+  }
+
+  await checkSchedulingConflict(req.user._id, parsedDate);
 
   // 3. Create Session with tutorId locked to authenticated user
   const session = await Session.create({
     tutorId: req.user._id,
     studentId: student._id,
-    scheduledAt: new Date(scheduledAt),
+    scheduledAt: parsedDate,
     topic,
     status: 'scheduled',
-    notes: notes || '',
-    aiPlan: aiPlan || {
-      learningObjectives: [],
-      lessonOutline: [],
-      practiceQuestions: [],
-    },
   });
 
   const populatedSession = await Session.findById(session._id)
@@ -54,6 +53,14 @@ const createSession = asyncHandler(async (req, res) => {
     message: 'Session scheduled successfully',
     data: populatedSession,
   });
+});
+
+const getSessions = asyncHandler(async (req, res) => {
+  const sessions = await Session.find({ tutorId: req.user._id })
+    .populate('studentId', 'name email')
+    .sort({ scheduledAt: 1 });
+
+  return res.status(200).json({ success: true, count: sessions.length, data: sessions });
 });
 
 /**
@@ -98,10 +105,10 @@ const getSessionById = asyncHandler(async (req, res) => {
  */
 const updateSessionStatus = asyncHandler(async (req, res) => {
   const { sessionId } = req.params;
-  const { status, aiReview, aiPlan } = req.body;
+  const { status } = req.body;
 
   if (!status) {
-    throw ApiError.badRequest("Status field is required (e.g., 'in_progress', 'completed', 'ai_reviewed')");
+    throw ApiError.badRequest("Status field is required (e.g., 'in_progress' or 'completed')");
   }
 
   const session = await Session.findById(sessionId);
@@ -120,24 +127,6 @@ const updateSessionStatus = asyncHandler(async (req, res) => {
 
   // Update status
   session.status = status;
-
-  // If transitioning to completed or ai_reviewed with payload updates
-  if (aiReview) {
-    session.aiReview = {
-      summary: aiReview.summary || session.aiReview?.summary || '',
-      homework: aiReview.homework || session.aiReview?.homework || [],
-      nextSessionSuggestion:
-        aiReview.nextSessionSuggestion || session.aiReview?.nextSessionSuggestion || '',
-    };
-  }
-
-  if (aiPlan) {
-    session.aiPlan = {
-      learningObjectives: aiPlan.learningObjectives || session.aiPlan?.learningObjectives || [],
-      lessonOutline: aiPlan.lessonOutline || session.aiPlan?.lessonOutline || [],
-      practiceQuestions: aiPlan.practiceQuestions || session.aiPlan?.practiceQuestions || [],
-    };
-  }
 
   await session.save();
 
@@ -191,6 +180,7 @@ const updateSessionNotes = asyncHandler(async (req, res) => {
 
 module.exports = {
   createSession,
+  getSessions,
   getSessionById,
   updateSessionStatus,
   updateSessionNotes,
