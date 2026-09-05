@@ -15,26 +15,64 @@ dotenv.config();
 const app = express();
 
 // Security HTTP headers
-app.use(helmet());
-
-// CORS configuration
-const allowedOrigins = [
-  process.env.CLIENT_URL];
-
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS blocked: Origin not allowed'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
+
+// CORS configuration
+const configuredOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim().replace(/\/$/, ''))
+  : [];
+
+const defaultAllowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5173',
+  'https://tutor-flow-pi.vercel.app',
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (no origin header, e.g. curl, postman, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const normalizedOrigin = origin.replace(/\/$/, '');
+
+    // Allow explicitly defined origins or any Vercel domain (*.vercel.app) or localhost
+    const isExplicitlyAllowed =
+      configuredOrigins.includes('*') ||
+      configuredOrigins.includes(normalizedOrigin) ||
+      defaultAllowedOrigins.includes(normalizedOrigin);
+
+    const isVercelDomain = /^https:\/\/[a-zA-Z0-9_.-]+\.vercel\.app$/.test(normalizedOrigin);
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?$/.test(normalizedOrigin);
+
+    if (isExplicitlyAllowed || isVercelDomain || isLocalhost) {
+      return callback(null, true);
+    }
+
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-auth-token',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+  ],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Logging
 if (process.env.NODE_ENV !== 'test') {
