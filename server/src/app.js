@@ -19,7 +19,7 @@ app.use(helmet());
 
 // CORS configuration
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173'];
+  process.env.CLIENT_URL];
 
 app.use(
   cors({
