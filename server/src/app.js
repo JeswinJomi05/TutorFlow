@@ -9,6 +9,7 @@ const tutorRoutes = require('./routes/tutor.routes');
 const studentRoutes = require('./routes/student.routes');
 const sessionRoutes = require('./routes/session.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware');
+const connectDB = require('./config/db');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -96,6 +97,15 @@ const authLimiter = rateLimit({
   },
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'TutorFlow API is online',
+    health: '/api/health',
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -104,6 +114,16 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
   });
+});
+
+// Ensure database connection for serverless environments (Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // API Routes
