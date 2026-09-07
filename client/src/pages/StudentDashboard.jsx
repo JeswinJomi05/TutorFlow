@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  BookOpen, CheckCircle2, Award, LogOut, Video, Clock, FileText, Loader2,
+  BookOpen, CheckCircle2, Award, LogOut, Clock, FileText, Loader2,
   X, RefreshCw, Sparkles, Lightbulb, Circle, CheckCircle,
-  BookMarked, CalendarDays, User, ChevronRight, ArrowLeft,
+  BookMarked, CalendarDays, User, ChevronRight, ArrowLeft, LayoutDashboard, Menu,
 } from 'lucide-react';
 import authService from '../services/authService';
 import studentService from '../services/studentService';
@@ -19,6 +19,8 @@ export default function StudentDashboard() {
   const [errors, setErrors] = useState({});
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedHomework, setSelectedHomework] = useState(null);
+  const [activeSection, setActiveSection] = useState('overview');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [completedHomework, setCompletedHomework] = useState(() => {
     try {
       const stored = localStorage.getItem('tf_completed_homework');
@@ -69,12 +71,20 @@ export default function StudentDashboard() {
     );
   };
 
+  const scrollToSection = (sectionId, sectionKey) => {
+    setActiveSection(sectionKey);
+    setMobileMenuOpen(false);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const upcomingSessions = sessions
     .filter((s) => s.status === 'in_progress' || (s.status === 'scheduled' && new Date(s.scheduledAt) >= new Date()))
     .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
   const completedSessions = sessions.filter((s) => s.status === 'completed' || s.status === 'ai_reviewed');
   const tutor = profile?.tutorId;
-  const liveSession = sessions.find((s) => s.status === 'in_progress');
 
   const completedCount = homework.filter((t) => completedHomework.includes(t.id)).length;
   const filteredHomework = homework.filter((t) => {
@@ -87,33 +97,151 @@ export default function StudentDashboard() {
     homework.filter((t) => String(t.sessionId) === String(session?._id || session?.id));
 
   return (
-    <div className="dashboard-container">
-      {/* Navbar */}
-      <header className="dashboard-navbar">
-        <div className="nav-brand-group">
-          <div className="nav-logo-badge">TF</div>
-          <span className="nav-brand-title">TutorFlow</span>
-          <span className="nav-role-tag" style={{ backgroundColor: '#FCF9E0', color: '#854D0E' }}>Student Portal</span>
+    <div className="student-shell">
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="student-sidebar-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Fixed Left Sidebar for Student Profile & Navigation */}
+      <aside className={`student-sidebar${mobileMenuOpen ? ' mobile-open' : ''}`}>
+        {/* Brand */}
+        <div className="student-sidebar-brand">
+          <div className="student-brand-logo">TF</div>
+          <div className="student-brand-text">
+            <span className="student-brand-name">TutorFlow</span>
+            <span className="student-portal-tag">Student Portal</span>
+          </div>
         </div>
-        <div className="nav-user-actions">
-          <div className="user-profile-badge">
-            <div className="avatar-circle" style={{ background: 'linear-gradient(135deg, #3E0F8D, #9564DD)', color: 'white' }}>
+
+        {/* Student Profile Widget */}
+        <div className="student-profile-widget">
+          <div className="student-profile-header">
+            <div className="student-avatar-large">
               {getInitials(currentUser?.name || 'Student')}
             </div>
-            <div className="user-meta-text">
-              <span className="user-name-text">{currentUser?.name || 'Student'}</span>
-              <span className="user-email-sub">{currentUser?.email || ''}</span>
+            <div className="student-profile-details">
+              <span className="student-name-heading" title={currentUser?.name || 'Student'}>
+                {currentUser?.name || 'Student'}
+              </span>
+              <span className="student-email-heading" title={currentUser?.email || ''}>
+                {currentUser?.email || 'student@tutorflow.com'}
+              </span>
             </div>
           </div>
-          <button onClick={handleLogout} className="logout-nav-button" title="Log out">
-            <LogOut size={16} /><span>Sign Out</span>
+          <div className="student-profile-badges">
+            <div className="student-badge-item subject-badge" title="Enrolled Subject">
+              <BookOpen size={12} />
+              <span>{profile?.subject || 'Enrolled Student'}</span>
+            </div>
+            {profile?.currentLevel && (
+              <div className="student-badge-item level-badge" title="Academic Level">
+                <Award size={12} />
+                <span>{profile.currentLevel}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar Navigation */}
+        <nav className="student-nav">
+          <button
+            type="button"
+            className={`student-nav-item${activeSection === 'overview' ? ' active' : ''}`}
+            onClick={() => scrollToSection('student-overview', 'overview')}
+          >
+            <LayoutDashboard size={18} />
+            <span>Overview</span>
+          </button>
+
+          <button
+            type="button"
+            className={`student-nav-item${activeSection === 'sessions' ? ' active' : ''}`}
+            onClick={() => scrollToSection('student-sessions', 'sessions')}
+          >
+            <CalendarDays size={18} />
+            <span>Sessions</span>
+            {upcomingSessions.length > 0 && (
+              <span className="student-nav-count">{upcomingSessions.length}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`student-nav-item${activeSection === 'homework' ? ' active' : ''}`}
+            onClick={() => scrollToSection('student-homework', 'homework')}
+          >
+            <BookMarked size={18} />
+            <span>Homework</span>
+            {homework.length > 0 && (
+              <span className="student-nav-count count-green">{completedCount}/{homework.length}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`student-nav-item${activeSection === 'notes' ? ' active' : ''}`}
+            onClick={() => scrollToSection('student-notes', 'notes')}
+          >
+            <FileText size={18} />
+            <span>Past Notes</span>
+            {completedSessions.length > 0 && (
+              <span className="student-nav-count count-idle">{completedSessions.length}</span>
+            )}
+          </button>
+        </nav>
+
+        {/* Assigned Tutor Card in Sidebar */}
+        {tutor?.name && (
+          <div className="student-tutor-box">
+            <span className="student-tutor-label">Assigned Tutor</span>
+            <div className="student-tutor-content">
+              <div className="student-tutor-avatar">
+                {getInitials(tutor.name)}
+              </div>
+              <div className="student-tutor-meta">
+                <strong>{tutor.name}</strong>
+                <span>{profile?.subject || 'Tutor'}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Fixed Footer Logout */}
+        <div className="student-sidebar-footer">
+          <button className="student-logout-button" onClick={handleLogout} title="Sign out of student portal">
+            <LogOut size={16} />
+            <span>Sign Out</span>
           </button>
         </div>
-      </header>
+      </aside>
 
-      <main className="dashboard-main">
-        {/* Hero Banner */}
-        <section className="dashboard-hero-banner" style={{ background: 'linear-gradient(135deg, #2A0864 0%, #3E0F8D 100%)' }}>
+      {/* Main Content Area next to Fixed Sidebar */}
+      <div className="student-content-area">
+        {/* Mobile Top Header (only visible on mobile screens) */}
+        <header className="student-mobile-header">
+          <div className="student-mobile-brand">
+            <div className="student-brand-logo" style={{ width: 32, height: 32, fontSize: 13 }}>TF</div>
+            <span style={{ fontWeight: 800, color: 'var(--color-primary-dark)', fontSize: 16 }}>TutorFlow</span>
+            <span className="student-portal-tag" style={{ fontSize: 9, padding: '1px 6px' }}>Student</span>
+          </div>
+          <button
+            type="button"
+            className="student-mobile-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </header>
+
+        <main className="dashboard-main">
+          {/* Hero Banner */}
+          <section id="student-overview" className="dashboard-hero-banner" style={{ background: 'linear-gradient(135deg, #2A0864 0%, #3E0F8D 100%)' }}>
           <div className="hero-banner-content">
             <h1 className="hero-banner-title">
               Welcome back, {(currentUser?.name || 'Student').split(' ')[0]}! &#x1F680;
@@ -126,14 +254,6 @@ export default function StudentDashboard() {
               )}
             </p>
           </div>
-          <button
-            className="hero-quick-action-btn"
-            onClick={() => liveSession && setSelectedSession(liveSession)}
-            disabled={!liveSession}
-            title={liveSession ? 'Open your live session' : 'No live study room is available'}
-          >
-            <Video size={18} /><span>Join Study Room</span>
-          </button>
         </section>
 
         {errors.profile && (
@@ -178,7 +298,7 @@ export default function StudentDashboard() {
         {/* Two-Column Grid */}
         <div className="dashboard-grid-sections">
           {/* Sessions */}
-          <section className="dashboard-panel">
+          <section id="student-sessions" className="dashboard-panel">
             <div className="panel-header">
               <h2 className="panel-title">Your Scheduled Tutoring Sessions</h2>
               <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
@@ -222,7 +342,7 @@ export default function StudentDashboard() {
           </section>
 
           {/* Homework Panel */}
-          <aside className="dashboard-panel" style={{ padding: 0, overflow: 'hidden', gap: 0 }}>
+          <section id="student-homework" className="dashboard-panel" style={{ padding: 0, overflow: 'hidden', gap: 0 }}>
             <div className="panel-header" style={{ padding: '18px 20px', borderBottom: '1px solid var(--color-border-light)' }}>
               <h2 className="panel-title">Homework</h2>
               <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
@@ -321,11 +441,11 @@ export default function StudentDashboard() {
                 </div>
               </>
             )}
-          </aside>
+          </section>
         </div>
 
         {/* Past Session Notes */}
-        <section className="dashboard-panel notes-panel">
+        <section id="student-notes" className="dashboard-panel notes-panel">
           <div className="panel-header"><h2 className="panel-title">Past Session Notes</h2></div>
           {loading.sessions ? (
             <div className="student-state"><Loader2 size={20} className="animate-spin" />Loading notes...</div>
@@ -615,6 +735,7 @@ export default function StudentDashboard() {
           </section>
         </div>
       )}
+      </div>
     </div>
   );
 }
