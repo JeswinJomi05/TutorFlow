@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth.routes');
 const tutorRoutes = require('./routes/tutor.routes');
 const studentRoutes = require('./routes/student.routes');
 const sessionRoutes = require('./routes/session.routes');
+const aiRoutes = require('./routes/ai.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware');
 const connectDB = require('./config/db');
 const dotenv = require('dotenv');
@@ -131,6 +132,16 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/tutors', tutorRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/sessions', sessionRoutes);
+// Extended timeout for AI routes (Gemini can take 30-60 s with retries)
+app.use('/api/ai', (req, res, next) => {
+  req.socket.setTimeout(120000);
+  res.setTimeout(120000, () => {
+    res.status(503).json({ success: false, message: 'AI generation timed out. Please try again.' });
+  });
+  next();
+});
+
+app.use('/api/ai', aiRoutes);
 
 // Catch 404 and forward to error handler
 app.use(notFoundHandler);

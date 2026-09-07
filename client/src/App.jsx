@@ -2,7 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import TutorDashboard from './pages/TutorDashboard';
 import StudentDashboard from './pages/StudentDashboard';
-import { AddStudentPage, SessionsPage, StudentProfilePage, ScheduleSessionPage, SessionDetailPage, StudentsPage } from './pages/TutorPages';
+import { AddStudentPage, SessionsPage, ScheduleSessionPage, StudentsPage } from './pages/TutorPages';
+import { StudentProfilePage, SessionDetailPage } from './pages/TutorAiPages';
 import ProtectedRoute from './components/ProtectedRoute';
 import authService from './services/authService';
 import './App.css';

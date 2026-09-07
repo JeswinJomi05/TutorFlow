@@ -7,7 +7,8 @@ const ApiError = require('../utils/apiError');
 const VALID_TRANSITIONS = {
   scheduled: ['in_progress'],
   in_progress: ['completed'],
-  completed: [],
+  completed: ['ai_reviewed'],
+  ai_reviewed: [],
 };
 
 /**
@@ -24,7 +25,7 @@ const validateStatusTransition = (currentStatus, newStatus) => {
 
   if (!allowedNextStatuses.includes(newStatus)) {
     throw ApiError.badRequest(
-      `Invalid session status transition from '${currentStatus}' to '${newStatus}'. Allowed flow: scheduled -> in_progress -> completed`
+      `Invalid session status transition from '${currentStatus}' to '${newStatus}'. Allowed flow: scheduled -> in_progress -> completed -> ai_reviewed`
     );
   }
 };

@@ -36,13 +36,35 @@ const sessionSchema = new mongoose.Schema(
     },
     aiPlan: {
       learningObjectives: { type: [String], default: [] },
-      lessonOutline: { type: [String], default: [] },
-      practiceQuestions: { type: [String], default: [] },
+      lessonOutline: {
+        type: [{
+          step: Number,
+          title: String,
+          description: String,
+        }],
+        default: [],
+      },
+      practiceQuestions: {
+        type: [{
+          question: String,
+          difficulty: String,
+        }],
+        default: [],
+      },
+      generatedAt: { type: Date },
     },
     aiReview: {
       summary: { type: String, default: '' },
-      homework: { type: [String], default: [] },
+      homework: {
+        type: [{
+          task: String,
+          description: String,
+          difficulty: String,
+        }],
+        default: [],
+      },
       nextSessionSuggestion: { type: String, default: '' },
+      generatedAt: { type: Date },
     },
   },
   {

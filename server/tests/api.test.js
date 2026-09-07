@@ -208,10 +208,7 @@ const runTests = async () => {
       }
     });
 
-    // ----------------------------------------------------
-    // 10. Tutor Creates Session
-    // ----------------------------------------------------
-    const sessionTime = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    const sessionTime = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + Math.floor(Math.random() * 1000000000)).toISOString();
     await testCase('10. POST /api/sessions - Tutor schedules a new tutoring session', async () => {
       const res = await fetch(`${BASE_URL}/sessions`, {
         method: 'POST',
@@ -432,6 +429,62 @@ const runTests = async () => {
       const data = await res.json();
       if (res.status !== 200 || !Array.isArray(data.data)) {
         throw new Error(`Failed to retrieve homework: ${JSON.stringify(data)}`);
+      }
+    });
+
+    // ----------------------------------------------------
+    // 21. AI Security: Student blocked from AI endpoints (403)
+    // ----------------------------------------------------
+    await testCase('21. Security: Student blocked from AI endpoints (403 Forbidden)', async () => {
+      const res = await fetch(`${BASE_URL}/ai/progress/${createdStudentId}`, {
+        headers: { Authorization: `Bearer ${studentToken}` },
+      });
+      const data = await res.json();
+      if (res.status !== 403) {
+        throw new Error(`Expected 403 Forbidden for student AI access, got ${res.status}: ${JSON.stringify(data)}`);
+      }
+    });
+
+    // ----------------------------------------------------
+    // 22. AI Security: Secondary tutor blocked from another tutor's student (404)
+    // ----------------------------------------------------
+    await testCase('22. Security: Secondary tutor blocked from other tutor student AI progress (404)', async () => {
+      const res = await fetch(`${BASE_URL}/ai/progress/${createdStudentId}`, {
+        headers: { Authorization: `Bearer ${secondaryTutorToken}` },
+      });
+      const data = await res.json();
+      if (res.status !== 404) {
+        throw new Error(`Expected 404 for unowned student AI progress, got ${res.status}: ${JSON.stringify(data)}`);
+      }
+    });
+
+    // ----------------------------------------------------
+    // 23. AI Session Plan State Guard (Reject on non-scheduled session)
+    // ----------------------------------------------------
+    await testCase('23. POST /api/ai/session-plan/:id - Reject plan generation on completed session (400)', async () => {
+      const res = await fetch(`${BASE_URL}/ai/session-plan/${createdSessionId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${tutorToken}` },
+      });
+      const data = await res.json();
+      if (res.status !== 400) {
+        throw new Error(`Expected 400 Bad Request, got ${res.status}: ${JSON.stringify(data)}`);
+      }
+    });
+
+    // ----------------------------------------------------
+    // 24. AI Progress Summary Generation (Live Gemini)
+    // ----------------------------------------------------
+    await testCase('24. GET /api/ai/progress/:studentId - Tutor generates AI progress summary via Gemini', async () => {
+      const res = await fetch(`${BASE_URL}/ai/progress/${createdStudentId}`, {
+        headers: { Authorization: `Bearer ${tutorToken}` },
+      });
+      const data = await res.json();
+      if (res.status !== 200 || !data.success || !data.data?.summary) {
+        throw new Error(`Expected AI progress summary, got ${res.status}: ${JSON.stringify(data)}`);
+      }
+      if (typeof data.data.summary !== 'string' || data.data.summary.trim().length === 0) {
+        throw new Error(`Invalid summary format: ${JSON.stringify(data.data)}`);
       }
     });
 

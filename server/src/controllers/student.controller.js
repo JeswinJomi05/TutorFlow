@@ -76,7 +76,9 @@ const getMyHomework = asyncHandler(async (req, res) => {
       sessionTopic: session.topic,
       sessionDate: session.scheduledAt,
       tutorName: session.tutorId?.name || 'Tutor',
-      taskDescription: task,
+      task: task.task || task,
+      taskDescription: task.description || task.task || task,
+      difficulty: task.difficulty || 'medium',
       nextSessionSuggestion: session.aiReview.nextSessionSuggestion || '',
       summary: session.aiReview.summary || '',
     }))

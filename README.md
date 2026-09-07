@@ -228,6 +228,34 @@ npm run lint     # Run ESLint
 
 See [BACKEND_API_SPECIFICATION.md](BACKEND_API_SPECIFICATION.md) for complete API documentation.
 
+## AI Integration
+
+TutorFlow uses Google Gemini for three backend-only features:
+
+1. AI Session Planning (`POST /api/ai/session-plan/:sessionId`)
+2. AI Session Review (`POST /api/ai/session-review/:sessionId`)
+3. Student Progress Summary (`GET /api/ai/progress/:studentId`)
+
+The request path is `React -> Express API -> authenticated tutor ownership checks -> Gemini Service -> Google Gemini`. `GEMINI_API_KEY` is stored only in the server environment and is never exposed to Vite or browser code. Set `GEMINI_MODEL` to a supported model, or use the documented default.
+
+### Database Relationships
+
+The existing relationships remain `Tutor -> Students -> Sessions`. AI data is stored on the existing session document: `aiPlan` contains objectives, four outline steps, practice questions, and `generatedAt`; `aiReview` contains a summary, structured homework, next-session suggestion, and `generatedAt`. No duplicate session or review collection is created.
+
+### Prompts
+
+The session planning prompt tells Gemini it is an expert one-to-one tutor planner and supplies the student's name, subject, level, learning goals, weak areas, current topic/date, recent sessions, and prior AI reviews. It requires exactly three objectives, four outline steps, and three progressively difficult questions as JSON.
+
+The session review prompt tells Gemini it is an educational session reviewer and supplies the student profile, current topic, saved plan, tutor notes, and recent session context. It must summarize only supported content, create two or three level-appropriate homework tasks, and suggest the next session as JSON.
+
+The progress prompt tells Gemini it is an educational progress analyst and supplies the student profile, recent session history, topics, notes, and AI reviews. It must return only `{ "summary": "..." }` and may not invent grades, scores, achievements, or unsupported progress.
+
+All prompts explicitly prohibit invented facts, unsupported mastery claims, markdown, and non-JSON output. The profile, weak areas, goals, current topic, and history are included to prevent generic recommendations.
+
+### AI Failure Handling
+
+AI failures return a normal API error and do not break existing workflows. Missing credentials, unavailable Gemini, timeouts, invalid JSON, and schema mismatches are logged server-side where appropriate and returned as safe messages. A review is saved and a session changes from `completed` to `ai_reviewed` only after Gemini output validates successfully. Failed review generation leaves the session `completed` so the tutor can retry.
+
 ## 📱 Responsive Design
 
 ### Desktop (1200px+)

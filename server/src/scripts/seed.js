@@ -107,16 +107,17 @@ const seedDatabase = async () => {
           'Solve exponential growth and decay initial value problems',
         ],
         lessonOutline: [
-          '10 min: Review of basic derivatives and antiderivatives',
-          '20 min: Introduction to slope fields and sketching solution curves',
-          '20 min: Analytical separation of variables method with worked examples',
-          '10 min: Quick-fire student practice and recap',
+          { step: 1, title: 'Concept Foundations', description: 'Review of basic derivatives and antiderivatives' },
+          { step: 2, title: 'Slope Fields', description: 'Introduction to slope fields and sketching solution curves' },
+          { step: 3, title: 'Analytical Separation', description: 'Separation of variables method with worked examples' },
+          { step: 4, title: 'Guided Practice', description: 'Quick-fire student practice and recap' },
         ],
         practiceQuestions: [
-          'Find the general solution to dy/dx = 2xy',
-          'Given dy/dx = x/y with y(0) = 2, find the particular solution',
-          'Sketch the slope field for dy/dx = x - y at 9 grid points',
+          { question: 'Find the general solution to dy/dx = 2xy', difficulty: 'easy' },
+          { question: 'Given dy/dx = x/y with y(0) = 2, find the particular solution', difficulty: 'medium' },
+          { question: 'Sketch the slope field for dy/dx = x - y at 9 grid points', difficulty: 'hard' },
         ],
+        generatedAt: new Date(),
       },
     });
 
@@ -129,9 +130,23 @@ const seedDatabase = async () => {
       status: 'in_progress',
       notes: 'Currently working through ladder and inverted conical tank problem sets. Student showed quick understanding of geometric constraints.',
       aiPlan: {
-        learningObjectives: ['Identify implicit rates of change with respect to time (t)'],
-        lessonOutline: ['Warm up with Pythagoras-based related rates', 'Solve conical tank draining problem'],
-        practiceQuestions: ['A 13ft ladder slips down a vertical wall at 2ft/s. How fast is the base sliding when top is 12ft high?'],
+        learningObjectives: [
+          'Identify implicit rates of change with respect to time (t)',
+          'Formulate geometric relations between variables',
+          'Differentiate implicitly with respect to time',
+        ],
+        lessonOutline: [
+          { step: 1, title: 'Warm-up', description: 'Pythagoras-based related rates review' },
+          { step: 2, title: 'Conical Tank Modeling', description: 'Volume formula and similar triangles ratio setup' },
+          { step: 3, title: 'Implicit Differentiation', description: 'Differentiating with respect to time t' },
+          { step: 4, title: 'Synthesis & Review', description: 'Independent problem solving by student' },
+        ],
+        practiceQuestions: [
+          { question: 'A 13ft ladder slips down a wall at 2ft/s. How fast is base sliding when top is 12ft?', difficulty: 'medium' },
+          { question: 'Water leaks from a conical tank at 2 m^3/min. Find rate of water level drop.', difficulty: 'hard' },
+          { question: 'Radius of a circle increases at 3 cm/s. Find rate of area increase when r = 5 cm.', difficulty: 'easy' },
+        ],
+        generatedAt: new Date(),
       },
     });
 
@@ -144,18 +159,33 @@ const seedDatabase = async () => {
       status: 'ai_reviewed',
       notes: 'Covered area under curves, Riemann sum limits, and FTC Part 1 & 2. Alex demonstrated solid mastery of polynomial integration.',
       aiPlan: {
-        learningObjectives: ['Apply Fundamental Theorem of Calculus Part 1 and Part 2'],
-        lessonOutline: ['Concept breakdown of accumulation functions', 'Evaluation of definite integrals algebraically'],
-        practiceQuestions: ['Evaluate integral from 1 to 4 of (3x^2 - 2x + 1) dx'],
+        learningObjectives: [
+          'Apply Fundamental Theorem of Calculus Part 1 and Part 2',
+          'Evaluate definite integrals analytically',
+          'Interpret area accumulation geometrically',
+        ],
+        lessonOutline: [
+          { step: 1, title: 'Review', description: 'Area under curves and Riemann sum limits' },
+          { step: 2, title: 'FTC Part 1', description: 'Concept breakdown of accumulation functions' },
+          { step: 3, title: 'FTC Part 2', description: 'Evaluation of definite integrals algebraically' },
+          { step: 4, title: 'Practice Sets', description: 'Polynomial and trigonometric definite integrals' },
+        ],
+        practiceQuestions: [
+          { question: 'Evaluate integral from 1 to 4 of (3x^2 - 2x + 1) dx', difficulty: 'easy' },
+          { question: 'Find derivative of g(x) = integral from 0 to x^2 of sqrt(1 + t^3) dt', difficulty: 'medium' },
+          { question: 'Compute net signed area between f(x) = x^3 - 3x and x-axis on [-2, 2]', difficulty: 'hard' },
+        ],
+        generatedAt: new Date(Date.now() - 2 * 86400000),
       },
       aiReview: {
         summary: 'Alex achieved a 90% accuracy rate on definite integral problem sets. Good grasp of FTC principles with minor arithmetic checks needed on fraction operations.',
         homework: [
-          'Complete Chapter 4 Exercises #12-28 (Evens) in Calculus textbook',
-          'Solve 2 AP Classroom Free Response Questions on Accumulation Functions',
-          'Review trigonometry derivative identities before next session',
+          { task: 'Textbook Practice', description: 'Complete Chapter 4 Exercises #12-28 (Evens) in Calculus textbook', difficulty: 'medium' },
+          { task: 'AP Free Response', description: 'Solve 2 AP Classroom Free Response Questions on Accumulation Functions', difficulty: 'hard' },
+          { task: 'Identity Review', description: 'Review trigonometry derivative identities before next session', difficulty: 'easy' },
         ],
         nextSessionSuggestion: 'Proceed to U-Substitution and change of variables in definite integrals.',
+        generatedAt: new Date(Date.now() - 2 * 86400000),
       },
     });
 

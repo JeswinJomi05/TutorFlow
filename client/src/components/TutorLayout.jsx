@@ -17,7 +17,12 @@ export default function TutorLayout({ children }) {
         <NavLink to="/tutor/students"><Users size={18} />Students</NavLink>
         <NavLink to="/tutor/sessions"><CalendarDays size={18} />Sessions</NavLink>
       </nav>
-      <button className="tutor-logout" onClick={logout}><LogOut size={17} />Sign out</button>
+      <div className="tutor-sidebar-footer">
+        <button className="tutor-logout" onClick={logout} title="Sign out of TutorFlow">
+          <LogOut size={17} />
+          <span>Sign out</span>
+        </button>
+      </div>
     </aside>
     <div className="tutor-content">
       <header className="tutor-topbar"><span className="mobile-brand">TutorFlow</span><div className="tutor-user"><span className="tutor-avatar">{initials}</span><span>{user.name || 'Tutor'}</span></div></header>

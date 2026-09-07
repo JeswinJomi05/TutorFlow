@@ -125,8 +125,26 @@ const updateSessionStatus = asyncHandler(async (req, res) => {
   // Enforce centralized state machine validation
   validateStatusTransition(session.status, status);
 
+  if (status === 'ai_reviewed' && !req.body.aiReview) {
+    throw ApiError.badRequest('AI review data is required before marking a session as AI reviewed');
+  }
+
   // Update status
   session.status = status;
+
+  if (status === 'ai_reviewed' && req.body.aiReview) {
+    const homework = Array.isArray(req.body.aiReview.homework)
+      ? req.body.aiReview.homework.map((item) => (typeof item === 'string'
+        ? { task: item, description: '', difficulty: 'medium' }
+        : item))
+      : [];
+    session.aiReview = {
+      summary: req.body.aiReview.summary || '',
+      homework,
+      nextSessionSuggestion: req.body.aiReview.nextSessionSuggestion || '',
+      generatedAt: new Date(),
+    };
+  }
 
   await session.save();
 

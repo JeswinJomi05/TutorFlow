@@ -66,6 +66,21 @@ const tutorService = {
     });
     return response.data;
   },
+
+  generateSessionPlan: async (sessionId) => {
+    const response = await api.post(`/ai/session-plan/${sessionId}`, {}, { timeout: 90000 });
+    return response.data;
+  },
+
+  generateSessionReview: async (sessionId, data = {}) => {
+    const response = await api.post(`/ai/session-review/${sessionId}`, data, { timeout: 90000 });
+    return response.data;
+  },
+
+  generateProgressSummary: async (studentId) => {
+    const response = await api.get(`/ai/progress/${studentId}`, { timeout: 90000 });
+    return response.data;
+  },
 };
 
 export default tutorService;

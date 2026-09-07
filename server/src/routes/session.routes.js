@@ -41,8 +41,8 @@ const updateStatusValidation = [
   body('status')
     .notEmpty()
     .withMessage('Status is required')
-    .isIn(['in_progress', 'completed'])
-    .withMessage('Invalid status value. Allowed: in_progress, completed'),
+    .isIn(['in_progress', 'completed', 'ai_reviewed'])
+    .withMessage('Invalid status value. Allowed: in_progress, completed, ai_reviewed'),
 ];
 
 const sessionIdParamValidation = [
